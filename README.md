@@ -13,23 +13,27 @@ The following workspaces provides a sample go application that runs an HTTP serv
     go get github.com/google/uuid
     go get github.com/gorilla/mux
     ```
-3. Run the application
+3. Set the environment variable `PORT` to the port you want the server to run on
+    ```bash
+    export PORT=8080
+    ```
+4. Run the application
 
     ```bash
     go run main.go
     ```
-4. Test the application
+5. Test the application
 
     ```bash
     go test
     ```
-5. Build the application
+6. Build the application
 
     ```bash
-    go build
+    go build . -o crm
     ```
 6. Run the application
 
     ```bash
-    ./crm
+    ./udacity-crm
     ```
