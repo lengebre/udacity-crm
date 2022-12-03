@@ -21,34 +21,38 @@ type Customer struct {
 }
 
 var customers = map[string]Customer{
-	"aaa": {
+	"35d6cf6e-731c-11ed-a1eb-0242ac120002": {
 		Name:      "Aye",
 		Role:      "AyeAye",
 		Email:     "Aye@local.host",
 		Phone:     "(123) 456-7893",
 		Contacted: true,
 	},
-	"aab": {
+	"44f6f776-731c-11ed-a1eb-0242ac120002": {
 		Name:      "Bay",
 		Role:      "BayBay",
 		Email:     "Bay@local.host",
 		Phone:     "(123)456-7892",
 		Contacted: false,
 	},
-	"aac": {
+	"44f6r27324-731c-11ed-a1eb-0242ac120002": {
 		Name:      "Cey",
 		Role:      "CeyCey",
 		Email:     "Cey@local.host",
 		Phone:     "(123) 456-7891",
 		Contacted: false,
 	},
-	"aad": {
+	"41234r27324-731c-11ed-a1eb-0242ac120002": {
 		Name:      "Dey",
 		Role:      "DeyDey",
 		Email:     "Dey@local.host",
 		Phone:     "(123) 456-7899",
 		Contacted: false,
 	},
+}
+
+func homePage(w http.ResponseWriter, r *http.Request) {
+	http.FileServer(http.Dir("./static/")).ServeHTTP(w, r)
 }
 
 func getCustomers(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +69,9 @@ func getCustomer(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(customers[mux.Vars(r)["id"]])
 		w.WriteHeader(http.StatusOK)
 	} else {
+		doesNotExist := map[string]string{}
 		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(doesNotExist)
 	}
 
 }
@@ -79,14 +85,15 @@ func addCustomer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if _, ok := customers[mux.Vars(r)["id"]]; ok {
+		doesNotExist := map[string]string{}
 		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(customers)
+		json.NewEncoder(w).Encode(doesNotExist)
 	} else {
 
 		json.Unmarshal(reqBody, &customer)
 		customers[customer.Id] = customer
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(customers)
+		json.NewEncoder(w).Encode(customers[customer.Id])
 	}
 
 }
@@ -100,8 +107,10 @@ func deleteCustomer(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(customers)
 	} else {
+		doesNotExist := map[string]string{}
+
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(customers)
+		json.NewEncoder(w).Encode(doesNotExist)
 	}
 }
 
@@ -115,11 +124,16 @@ func updateCustomer(w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal(reqBody, &customer)
 		customers[id] = customer
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(customers)
+		json.NewEncoder(w).Encode(customers[id])
 	} else {
+		doesNotExist := map[string]string{}
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(customers)
+		json.NewEncoder(w).Encode(doesNotExist)
 	}
+}
+func pageNotFound(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
+	http.ServeFile(w, r, "./static/404.html")
 }
 func main() {
 	port := os.Getenv("PORT")
@@ -131,12 +145,15 @@ func main() {
 	}
 
 	log.Printf("Starting the Server on %s...", port)
+	router.HandleFunc("/", homePage).Methods("GET")              // home page (static page)
 	router.HandleFunc("/customers", getCustomers).Methods("GET") // get all customers
 	router.HandleFunc("/customers/{id}", getCustomer).Methods("GET")
 	router.HandleFunc("/customers", addCustomer).Methods("POST")
 	router.HandleFunc("/customers/{id}", updateCustomer).Methods("PUT") // update a customer
 
 	router.HandleFunc("/customers/{id}", deleteCustomer).Methods("DELETE") // delete a customer
+	// not found page
+	router.NotFoundHandler = http.HandlerFunc(pageNotFound)
 
 	log.Fatal(http.ListenAndServe(":"+port, router))
 
